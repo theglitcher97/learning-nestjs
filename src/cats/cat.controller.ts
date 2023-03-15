@@ -1,10 +1,13 @@
+import { CreateCatDto } from './dto/create-cat.dto';
 import {
   All,
   Body,
   Controller,
   Get,
+  HttpStatus,
   Param,
   Post,
+  Query,
   Redirect,
   Req,
   Res,
@@ -18,8 +21,8 @@ export class CatsController {
   constructor(private catsService: CatsService) {}
 
   @Get()
-  findAll(@Res() response: Response) {
-    return response.status(200).json({ data: this.catsService.findAll() });
+  findAll(@Res() response: Response, @Query() query) {
+    return response.status(200).json({ data: this.catsService.findAll(query) });
   }
 
   @Get('/:id')
@@ -28,19 +31,22 @@ export class CatsController {
     @Req() request: Request,
     @Param('id') catId: string,
   ) {
-    const cat = this.catsService.findCat(catId);
-    if (cat) return response.status(200).json({ data: cat });
+    const cat = this.catsService.findCat(Number(catId));
+    if (cat) return response.status(HttpStatus.OK).json({ data: cat });
     return response
-      .status(404)
-      .json({ data: `Cat with name '${catId}' not found` });
+      .status(HttpStatus.NOT_FOUND)
+      .json({ data: `Cat with id '${catId}' not found` });
   }
 
   @Post()
-  addCat(@Res() response: Response, @Body('cat') cat: string) {
+  // event though we stablish which object-structure we want to receive, we'll still receive
+  // any property outside our object-structure
+  addCat(@Res() response: Response, @Body() cat: CreateCatDto) {
     const wasCatStored = this.catsService.addCat(cat);
-    if (wasCatStored) return response.status(201).json({ data: cat });
+    if (wasCatStored)
+      return response.status(HttpStatus.CREATED).json({ data: cat });
     return response
-      .status(400)
+      .status(HttpStatus.BAD_REQUEST)
       .json({ data: `A cat with the name '${cat}' already exists` });
   }
 
