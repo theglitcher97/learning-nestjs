@@ -42,12 +42,8 @@ export class CatsController {
   // event though we stablish which object-structure we want to receive, we'll still receive
   // any property outside our object-structure
   addCat(@Res() response: Response, @Body() cat: CreateCatDto) {
-    const wasCatStored = this.catsService.addCat(cat);
-    if (wasCatStored)
-      return response.status(HttpStatus.CREATED).json({ data: cat });
-    return response
-      .status(HttpStatus.BAD_REQUEST)
-      .json({ data: `A cat with the name '${cat}' already exists` });
+    const catStored = this.catsService.addCat(cat);
+    return response.status(HttpStatus.CREATED).json({ data: catStored });
   }
 
   @All('*')

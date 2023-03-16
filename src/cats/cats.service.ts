@@ -7,8 +7,8 @@ export class CatsService {
   private static catsCounter = 0;
   private cats: CatDto[] = [];
 
-  findAll(query?: { breed: string }) {
-    if (query) return this.cats.filter((cat) => cat.breed === query.breed);
+  findAll(query?: { breed: string }) {    
+    if (query && query['breed']) return this.cats.filter((cat) => cat.breed === query.breed);
     return this.cats;
   }
 
@@ -16,9 +16,9 @@ export class CatsService {
     return this.cats.find((cat) => cat.id === catID);
   }
 
-  addCat(cat: CreateCatDto): boolean {
+  addCat(cat: CreateCatDto): CatDto {
     const newCat: CatDto = { ...cat, id: CatsService.catsCounter++ };
     this.cats.push(newCat);
-    return true;
+    return newCat;
   }
 }
