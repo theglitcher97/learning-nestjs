@@ -5,27 +5,37 @@ import {
   Controller,
   Get,
   HttpStatus,
+  NotFoundException,
   Param,
   Post,
   Query,
   Redirect,
   Req,
-  Res,
+  Res, UseFilters,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { CatsService } from './cats.service';
+import { ForbiddenException } from '../exceptions/ForbiddenException';
+import {HttpExceptionFilter} from "../exception-filters/http-exception.filter";
 
+@UseFilters(HttpExceptionFilter) // controller scope filter
 // only request coming from this host can get to this Controller
 @Controller({ host: 'localhost', path: 'cats' })
 export class CatsController {
   constructor(private catsService: CatsService) {}
 
   @Get()
+  @UseFilters(HttpExceptionFilter) // method scope filter
   findAll(@Res() response: Response, @Query() query) {
-    return response.status(200).json({ data: this.catsService.findAll(query) });
+    if (Math.round(Math.random() * 5) > 2.5)
+      return response
+        .status(200)
+        .json({ data: this.catsService.findAll(query) });
+    throw new ForbiddenException();
   }
 
   @Get('/:id')
+  @UseFilters(HttpExceptionFilter)
   findById(
     @Res() response: Response,
     @Req() request: Request,
@@ -33,9 +43,7 @@ export class CatsController {
   ) {
     const cat = this.catsService.findCat(Number(catId));
     if (cat) return response.status(HttpStatus.OK).json({ data: cat });
-    return response
-      .status(HttpStatus.NOT_FOUND)
-      .json({ data: `Cat with id '${catId}' not found` });
+    throw new NotFoundException(`Cat with ID ${catId} not found`);
   }
 
   @Post()
