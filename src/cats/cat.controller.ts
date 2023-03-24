@@ -1,4 +1,4 @@
-import { CreateCatDto } from './dto/create-cat.dto';
+import {CreateCatDto, createCatSchema} from './dto/create-cat.dto';
 import {
   All,
   Body,
@@ -7,18 +7,21 @@ import {
   HttpStatus,
   NotFoundException,
   Param,
+  ParseIntPipe,
   Post,
   Query,
   Redirect,
   Req,
-  Res, UseFilters,
+  Res,
+  UseFilters, UsePipes,
 } from '@nestjs/common';
-import { Request, Response } from 'express';
-import { CatsService } from './cats.service';
-import { ForbiddenException } from '../exceptions/ForbiddenException';
+import {Request, Response} from 'express';
+import {CatsService} from './cats.service';
+import {ForbiddenException} from '../exceptions/ForbiddenException';
 import {HttpExceptionFilter} from "../exception-filters/http-exception.filter";
+import {JoiValidationPipe} from "../pipes/joi-validation.pipe";
 
-@UseFilters(HttpExceptionFilter) // controller scope filter
+// @UseFilters(HttpExceptionFilter) // controller scope filter
 // only request coming from this host can get to this Controller
 @Controller({ host: 'localhost', path: 'cats' })
 export class CatsController {
@@ -35,11 +38,17 @@ export class CatsController {
   }
 
   @Get('/:id')
-  @UseFilters(HttpExceptionFilter)
+  // @UseFilters(HttpExceptionFilter)
   findById(
     @Res() response: Response,
     @Req() request: Request,
-    @Param('id') catId: string,
+    // @Param('id', ParseIntPipe) catId: string, // ParseIntPipe tries to parse the 'id' to an integer or trows an exception
+    @Param(
+      'id',
+      // This is a transformation pipe (we also have validation pipes)
+      new ParseIntPipe({ errorHttpStatusCode: HttpStatus.NOT_ACCEPTABLE }),
+    )
+    catId: string, // ParseIntPipe tries to parse the 'id' to an integer or trows an exception
   ) {
     const cat = this.catsService.findCat(Number(catId));
     if (cat) return response.status(HttpStatus.OK).json({ data: cat });
@@ -47,8 +56,7 @@ export class CatsController {
   }
 
   @Post()
-  // event though we stablish which object-structure we want to receive, we'll still receive
-  // any property outside our object-structure
+  @UsePipes(new JoiValidationPipe(createCatSchema)) // this pipes help us validating that the incoming data is in the correct format
   addCat(@Res() response: Response, @Body() cat: CreateCatDto) {
     const catStored = this.catsService.addCat(cat);
     return response.status(HttpStatus.CREATED).json({ data: catStored });
