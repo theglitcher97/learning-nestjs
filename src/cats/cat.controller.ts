@@ -1,8 +1,9 @@
-import {CreateCatDto, createCatSchema} from './dto/create-cat.dto';
+import { CreateCatDto, createCatSchema } from './dto/create-cat.dto';
 import {
   All,
   Body,
   Controller,
+  DefaultValuePipe,
   Get,
   HttpStatus,
   NotFoundException,
@@ -13,13 +14,15 @@ import {
   Redirect,
   Req,
   Res,
-  UseFilters, UsePipes,
+  UseFilters,
+  UsePipes,
 } from '@nestjs/common';
-import {Request, Response} from 'express';
-import {CatsService} from './cats.service';
-import {ForbiddenException} from '../exceptions/ForbiddenException';
-import {HttpExceptionFilter} from "../exception-filters/http-exception.filter";
-import {JoiValidationPipe} from "../pipes/joi-validation.pipe";
+import { Request, Response } from 'express';
+import { CatsService } from './cats.service';
+import { ForbiddenException } from '../exceptions/ForbiddenException';
+import { HttpExceptionFilter } from '../exception-filters/http-exception.filter';
+import { JoiValidationPipe } from '../pipes/joi-validation.pipe';
+import { ValidationPipe } from '../pipes/validation.pipe';
 
 // @UseFilters(HttpExceptionFilter) // controller scope filter
 // only request coming from this host can get to this Controller
@@ -29,7 +32,10 @@ export class CatsController {
 
   @Get()
   @UseFilters(HttpExceptionFilter) // method scope filter
-  findAll(@Res() response: Response, @Query() query) {
+  findAll(
+    @Res() response: Response,
+    @Query('breed', new DefaultValuePipe('all')) query,
+  ) {
     if (Math.round(Math.random() * 5) > 2.5)
       return response
         .status(200)
@@ -57,7 +63,10 @@ export class CatsController {
 
   @Post()
   @UsePipes(new JoiValidationPipe(createCatSchema)) // this pipes help us validating that the incoming data is in the correct format
-  addCat(@Res() response: Response, @Body() cat: CreateCatDto) {
+  addCat(
+    @Res() response: Response,
+    @Body(new ValidationPipe()) cat: CreateCatDto,
+  ) {
     const catStored = this.catsService.addCat(cat);
     return response.status(HttpStatus.CREATED).json({ data: catStored });
   }

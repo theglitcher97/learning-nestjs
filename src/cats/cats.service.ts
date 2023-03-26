@@ -7,8 +7,9 @@ export class CatsService {
   private static catsCounter = 0;
   private cats: CatDto[] = [];
 
-  findAll(query?: { breed: string }) {    
-    if (query && query['breed']) return this.cats.filter((cat) => cat.breed === query.breed);
+  findAll(query?: { breed: string }) {
+    if (query && query['breed'])
+      return this.cats.filter((cat) => cat.breed === query.breed);
     return this.cats;
   }
 
